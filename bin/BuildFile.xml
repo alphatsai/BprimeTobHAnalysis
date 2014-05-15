@@ -1,0 +1,9 @@
+<bin name="SingleBprime" file="SingleBprime.cc">
+  <use name="root"/>
+</bin>
+
+<bin name="HistCummulative" file="histCummulative.cc">
+  <use name="root"/>
+</bin>
+
+
