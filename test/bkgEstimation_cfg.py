@@ -106,12 +106,12 @@ options.register('subjet2CSVDiscMax', 1.000,
     VarParsing.varType.float,
     "Maximum subjet2 b discriminator"
     )
-options.register('ApplyJEC', False,
+options.register('ApplyJEC', True,
     VarParsing.multiplicity.singleton,
     VarParsing.varType.bool,
     "Apply JEC" 
     )
-options.register('ApplyBTagSF', False,
+options.register('ApplyBTagSF', True,
     VarParsing.multiplicity.singleton,
     VarParsing.varType.bool,
     "Apply b-tagging scale factors" 
@@ -126,6 +126,16 @@ options.register('JERShift', 0.0,
     VarParsing.varType.float,
     "JER shift in unit of sigmas" 
     )
+options.register('SFbShiftHtag', 0.0,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.float,
+    "SFb shift (for Higgs-tagging) in unit of sigmas" 
+    )
+options.register('SFlShiftHtag', 0.0,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.float,
+    "SFl shift (for Higgs-tagging) in unit of sigmas" 
+    )
 options.register('SFbShift', 0.0,
     VarParsing.multiplicity.singleton,
     VarParsing.varType.float,
@@ -136,6 +146,11 @@ options.register('SFlShift', 0.0,
     VarParsing.varType.float,
     "SFl shift in unit of sigmas" 
     )
+
+if options.SFbShiftHtag != 0.0 and options.SFlShiftHtag != 0.0: 
+  print "SFbshiftHtag = ",  options.SFbShiftHtag, " and SFlshiftHtag = ", options.SFlShiftHtag
+  print "Warning: must be varied independently."
+
 if options.SFbShift != 0.0 and options.SFlShift != 0.0: 
   print "SFbshift = ",  options.SFbShift, " and SFlshift = ", options.SFlShift
   print "Warning: must be varied independently."
@@ -147,10 +162,16 @@ options.parseArguments()
 process = cms.Process("ABCD")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
-process.MessageLogger.cout = cms.untracked.PSet(
-    threshold = cms.untracked.string('INFO'), 
+process.MessageLogger = cms.Service("MessageLogger",
+    destinations = cms.untracked.vstring(
+      'detailedInfo',
+      ),
+    detailedInfo = cms.untracked.PSet(
+      threshold = cms.untracked.string('INFO'),  
+      ), 
+    suppressInfo = cms.untracked.vstring('ABCD'),
     ) 
-process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1)
+#process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1)
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) ) # Leave it this way. 
 
@@ -171,9 +192,9 @@ process.ABCD = cms.EDAnalyzer('BackgroundEstimationABCD',
     MaxEvents           = cms.int32(options.maxEvents),
     ReportEvery         = cms.int32(options.reportEvery),  
     InputTTree          = cms.string(options.ttreedir+'/tree'),
-    #InputFiles          = cms.vstring(FileNames), 
+    InputFiles          = cms.vstring(FileNames), 
     #InputFiles          = cms.vstring(FileNames_TTbar), 
-    InputFiles          = cms.vstring(FileNames_BpBp800), 
+    #InputFiles          = cms.vstring(FileNames_BpBp800), 
     #InputFiles          = cms.vstring(SkimmedFileNames_BpBp500), 
     #InputFiles          = cms.vstring(SkimmedFileNames_BpBp1000), 
     #InputFiles          = cms.vstring(SkimmedFileNames_QCD300to470), 
@@ -223,7 +244,9 @@ process.ABCD = cms.EDAnalyzer('BackgroundEstimationABCD',
     bVetoJetCSVDiscMax 	= cms.double(2),
     numbJetMin		      = cms.int32(1),
     numHiggsJetMin    	= cms.int32(1),
-    JetSelParams        = defaultJetSelectionParameters.clone(), 
+    JetSelParams        = defaultJetSelectionParameters.clone(
+      jetPtMin            = cms.double(30),
+      ), 
     FatJetSelParams     = defaultFatJetSelectionParameters.clone(), 
     HiggsJetSelParams   = defaultHiggsJetSelectionParameters.clone(
       subjet1CSVDiscMin = cms.double(0.679),
@@ -238,6 +261,8 @@ process.ABCD = cms.EDAnalyzer('BackgroundEstimationABCD',
     ApplyBTagSF         = cms.bool(options.ApplyBTagSF), 
     JESShift            = cms.double(options.JESShift), 
     JERShift            = cms.double(options.JERShift), 
+    SFbShiftHtag        = cms.double(options.SFbShiftHtag), 
+    SFlShiftHtag        = cms.double(options.SFlShiftHtag), 
     SFbShift            = cms.double(options.SFbShift), 
     SFlShift            = cms.double(options.SFlShift), 
     BuildMinTree        = cms.bool(True),
